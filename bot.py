@@ -66,4 +66,5 @@ def yt_link_handler(message):
 
 
 print("TelegramYTDLBot is running..\n")
+bot.delete_webhook(drop_pending_updates=True)   # ← این خط را اضافه کن
 bot.infinity_polling()
