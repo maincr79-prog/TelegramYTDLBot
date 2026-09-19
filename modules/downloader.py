@@ -1,3 +1,4 @@
+import os
 from yt_dlp import YoutubeDL
 
 from modules.progress import create_progress_bar
@@ -12,6 +13,9 @@ def download_video(url: str, bot, chat_id: int, message_id: int) -> str:
         "merge_output_format": "mp4",
         "progress_hooks": [create_progress_bar(bot, chat_id, message_id)],
     }
+
+    if os.path.exists("cookies.txt"):
+        options["cookiefile"] = "cookies.txt"
 
     try:
         with YoutubeDL(options) as ydl:
