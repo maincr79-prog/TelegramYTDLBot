@@ -8,9 +8,11 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies only if needed
+# Install system dependencies (ffmpeg is required)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc \
+    && apt-get install -y --no-install-recommends \
+        ffmpeg \
+        gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies separately for caching
