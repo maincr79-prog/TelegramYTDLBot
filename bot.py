@@ -14,6 +14,16 @@ TOKEN = os.getenv("BOT_API_KEY")
 bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
 
 
+def setup_cookies():
+    cookies_content = os.environ.get("YT_COOKIES")
+    if cookies_content:
+        with open("cookies.txt", "w", encoding="utf-8") as f:
+            f.write(cookies_content)
+
+
+setup_cookies()
+
+
 # '/start' command reply
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
@@ -66,5 +76,5 @@ def yt_link_handler(message):
 
 
 print("TelegramYTDLBot is running..\n")
-bot.delete_webhook(drop_pending_updates=True)   # ← این خط را اضافه کن
+bot.delete_webhook(drop_pending_updates=True)
 bot.infinity_polling()
