@@ -1,13 +1,20 @@
 import os
+
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import download_range_func
 
 from modules.progress import create_progress_bar
 
 
 TG_MAX_FILESIZE = 50 * 1024 * 1024  # 50 MB
+last_error = None
 
 
-def download_video(url: str, bot, chat_id: int, message_id: int) -> str:
+def download_video(url: str, bot, chat_id: int, message_id: int,
+                   start_time=None, end_time=None) -> str:
+    """Download a video. If start_time/end_time (seconds) are given,
+    only that section is downloaded."""
+    global last_error
     # Try best quality first, then fall back to lower qualities if file too large
     format_candidates = [
         "bestvideo+bestaudio/best",
@@ -28,6 +35,14 @@ def download_video(url: str, bot, chat_id: int, message_id: int) -> str:
             # YouTube n-challenge / "page needs to be reloaded" on datacenter IPs
             "remote_components": ["ejs:github"],
         }
+        last_error = None
+
+        # Time range cut (e.g. from second 30 to 90)
+        if start_time is not None and end_time is not None:
+            options["download_ranges"] = download_range_func(
+                None, [(start_time, end_time)]
+            )
+            options["force_keyframes_at_cuts"] = True
 
         if os.path.exists("cookies.txt"):
             options["cookiefile"] = "cookies.txt"
@@ -52,12 +67,19 @@ def download_video(url: str, bot, chat_id: int, message_id: int) -> str:
             )
 
         except Exception as e:
+            last_error = str(e)
             print(f"Error with format '{fmt}': {e}")
-
-    # All formats too large or failed
-    bot.send_message(
-        chat_id,
-        "❌ Could not download a version under 50 MB (Telegram limit).\n"
-        "Try a shorter video or lower quality manually.",
-    )
-    raise RuntimeError("All download attempts exceeded Telegram 50 MB limit")
+    # All formats too large or failed — report and let the caller move on
+    if last_error:
+        bot.send_message(
+            chat_id,
+            f"❌ Download failed: <code>{last_error[:300]}</code>\n"
+            "Try again in a few minutes, or send another link.",
+        )
+    else:
+        bot.send_message(
+            chat_id,
+            "❌ Even the lowest quality is over Telegram's 50 MB limit.\n"
+            "Try a shorter video, or use the time-range feature: <code>link start end</code>",
+        )
+    return None
